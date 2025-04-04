@@ -27,6 +27,7 @@ describe('TokenService', () => {
   let writeContractSpy: ReturnType<typeof jest.spyOn>;
   let loggerInfoSpy: ReturnType<typeof jest.spyOn>;
   let loggerErrorSpy: ReturnType<typeof jest.spyOn>;
+  let consoleLogSpy: ReturnType<typeof jest.spyOn>;
 
   beforeEach(async () => {
     jest.resetModules();
@@ -99,6 +100,9 @@ describe('TokenService', () => {
       logger = { ...logger, error: jest.fn() };
       loggerErrorSpy = logger.error;
     }
+
+    // Silence console.log during tests
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
     jest.clearAllMocks();
   });
@@ -261,8 +265,11 @@ describe('TokenService', () => {
       const internalError = new Error(
         'execution reverted: Insufficient balance',
       );
+      const causeError = new BaseError(internalError.message, {
+        cause: internalError,
+      });
 
-      const executionError = new ContractFunctionExecutionError(internalError, {
+      const executionError = new ContractFunctionExecutionError(causeError, {
         abi: erc20ABI,
         functionName: 'transferFrom',
         args: [fromAddress, toAddress, parsedTransferAmount],

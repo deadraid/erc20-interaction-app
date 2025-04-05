@@ -1,8 +1,4 @@
-import {
-  FastifyInstance,
-  FastifyPluginAsync,
-  FastifyPluginOptions,
-} from 'fastify';
+import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { TokenController } from './token.controller.js';
 import {
   TokenInfoResponseSchema,
@@ -18,13 +14,10 @@ import {
 const ROUTE_PREFIX = '/token';
 
 // Convert to a plugin that returns a Promise
-const registerTokenRoutes: FastifyPluginAsync = (
-  fastify: FastifyInstance,
-  options: FastifyPluginOptions,
-) => {
+const registerTokenRoutes: FastifyPluginAsync = (fastify: FastifyInstance) => {
   // Apply route prefix to all routes in this plugin
   fastify.register(
-    (instance, opts, done) => {
+    (instance, _, done) => {
       // GET /token/info
       instance.get(
         '/info',

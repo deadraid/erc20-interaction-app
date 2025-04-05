@@ -19,7 +19,7 @@ async function buildServer(): Promise<FastifyInstance> {
 
   await server.register(registerTokenRoutes, { prefix: '/api' });
 
-  server.get('/health', async (request, reply) => {
+  server.get('/health', async () => {
     return { status: 'ok' };
   });
 

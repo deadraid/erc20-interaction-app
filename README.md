@@ -24,44 +24,147 @@ A simple Node.js backend application built with Fastify and TypeScript that inte
       - `RPC_URL`: URL of your Ethereum node (local or public testnet).
       - `PRIVATE_KEY`: Private key of the account you want to use for transactions (ensure this account has funds on the chosen network).
       - `CONTRACT_ADDRESS`: Address of the deployed ERC20 contract.
+      - `CHAIN_ID`: ID of the blockchain network (11155111 for Sepolia).
       - `PORT` (optional): Port for the server (defaults to 3000).
       - `HOST` (optional): Host for the server (defaults to 0.0.0.0).
-4.  **Deploy ERC20 Contract:**
 
-    - To deploy on a local testnet:
+## Deploying the ERC20 Contract
 
-      ```bash
-      # Start a local Hardhat node in a separate terminal
-      yarn node:local
+### Option 1: Local Deployment
 
-      # Deploy the contract to the local node
-      yarn deploy:local
+```bash
+# Start a local Hardhat node in a separate terminal
+yarn node:local
 
-      # After deployment, update your .env file with the CONTRACT_ADDRESS
-      # from the deployment-local.json file that is generated
-      ```
+# Deploy the contract to the local node
+yarn deploy:local
 
-    - To deploy on Sepolia testnet:
-      ```bash
-      # Ensure you have ETH on your account for gas fees
-      yarn deploy:sepolia
-      ```
+# After deployment, update your .env file with the CONTRACT_ADDRESS
+# from the deployment-local.json file that is generated
+```
 
-## Usage Examples
+### Option 2: Sepolia Testnet Deployment
 
-1.  **Run the development server:**
+1. **Prerequisites for Sepolia deployment:**
 
-    ```bash
-    yarn dev
-    ```
+   - Create an [Infura](https://infura.io/) or [Alchemy](https://www.alchemy.com/) account to get an API key
+   - Obtain Sepolia ETH from a [faucet](https://sepoliafaucet.com/) for your wallet address
+   - Make sure you have a private key with sufficient Sepolia ETH for gas fees
 
-    The server will start, typically at `http://localhost:3000`.
+2. **Set up your environment for Sepolia:**
 
-2.  **API Endpoints:**
+   ```bash
+   # Update your .env file with these values
+   RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID
+   PRIVATE_KEY=0xYOUR_PRIVATE_KEY
+   CHAIN_ID=11155111
+   ```
 
-    - `GET /token/info`: Get token name, symbol, and total supply.
-    - `GET /account/:address/balance`: Get the token balance for a specific address.
-    - `POST /token/transfer-from`: Execute a `transferFrom` transaction (requires `spender` address, `from` address, `to` address, and `amount` in the request body).
+3. **Deploy the contract:**
+
+   ```bash
+   yarn deploy:sepolia
+   ```
+
+4. **After deployment:**
+   - The contract address will be displayed in the console
+   - A `deployment-sepolia.json` file will be generated with contract details
+   - Update your `.env` file with the new contract address
+   - Your tokens will be automatically minted to the deployer's address (1,000,000 tokens)
+
+## Running the Server
+
+```bash
+# Development mode with hot reload
+yarn dev
+
+# Production mode
+yarn build && yarn start
+```
+
+The server will start, typically at `http://localhost:3000`.
+
+## API Endpoints and Usage
+
+### 1. Get Token Information
+
+```http
+GET /api/token/info
+```
+
+Example response:
+
+```json
+{
+  "name": "MyToken",
+  "symbol": "MTK",
+  "totalSupply": "1000000",
+  "decimals": 18
+}
+```
+
+### 2. Get Token Balance
+
+```http
+GET /api/token/balance/0xYOUR_ADDRESS
+```
+
+Example response:
+
+```json
+{
+  "balance": "1000000"
+}
+```
+
+### 3. Approve Token Transfers
+
+Before transferring tokens using the transferFrom method, you must approve the service account as a spender:
+
+```http
+POST /api/token/approve
+Content-Type: application/json
+
+{
+  "spender": "0xSERVICE_ACCOUNT_ADDRESS",
+  "amount": "1000.0"
+}
+```
+
+Example response:
+
+```json
+{
+  "success": true,
+  "transactionHash": "0x...",
+  "blockNumber": "12345678"
+}
+```
+
+### 4. Transfer Tokens
+
+After approval, you can transfer tokens:
+
+```http
+POST /api/token/transfer-from
+Content-Type: application/json
+
+{
+  "from": "0xSENDER_ADDRESS",
+  "to": "0xRECIPIENT_ADDRESS",
+  "amount": "10.0"
+}
+```
+
+Example response:
+
+```json
+{
+  "success": true,
+  "transactionHash": "0x...",
+  "blockNumber": "12345678"
+}
+```
 
 ## Running with Docker
 
@@ -107,6 +210,20 @@ Each component typically contains:
 - Tests: Unit and integration tests specific to the component
 
 This structure can be seen in the token component, which manages all interactions with the ERC20 smart contract.
+
+## Troubleshooting
+
+### Chain ID Mismatch
+
+If you see an error like `invalid chain id for signer: have 1337 want 11155111`, make sure your .env file has the correct CHAIN_ID value for the network you're using.
+
+### Insufficient Allowance
+
+If transfers fail with "insufficient allowance," you need to call the approve endpoint before transferring tokens.
+
+### Missing Balance
+
+If you deployed to Sepolia but see zero balances, confirm the deployment transaction was successful and that the tokens were minted to the owner's address during deployment.
 
 ## Testing
 

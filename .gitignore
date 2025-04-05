@@ -18,3 +18,4 @@ artifacts
 coverage
 hardhat_logs.txt
 deployment-local.json
+deployment-sepolia.json

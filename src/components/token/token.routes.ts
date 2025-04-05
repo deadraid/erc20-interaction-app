@@ -10,6 +10,7 @@ import {
   BalanceResponseSchema,
   TransferFromRequestSchema,
   TransferFromResponseSchema,
+  ApproveRequestSchema,
   ErrorResponseSchema,
 } from './token.schemas.js';
 
@@ -69,6 +70,22 @@ const registerTokenRoutes: FastifyPluginAsync = (
           },
         },
         TokenController.transferFromHandler,
+      );
+
+      // POST /token/approve
+      instance.post(
+        '/approve',
+        {
+          schema: {
+            body: ApproveRequestSchema,
+            response: {
+              200: TransferFromResponseSchema,
+              '4xx': ErrorResponseSchema,
+              '5xx': ErrorResponseSchema,
+            },
+          },
+        },
+        TokenController.approveHandler,
       );
 
       done();

@@ -356,4 +356,55 @@ describe('TokenService', () => {
       expect(waitForTransactionReceiptSpy).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('approve', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should approve tokens successfully', async () => {
+      // ARRANGE
+      readContractSpy.mockResolvedValueOnce(18);
+      simulateContractSpy.mockResolvedValueOnce({
+        request: {},
+      });
+      const mockTxHash = '0x123456789';
+      writeContractSpy.mockResolvedValueOnce(mockTxHash);
+      waitForTransactionReceiptSpy.mockResolvedValueOnce({
+        status: 'success',
+        blockNumber: BigInt(12345),
+      });
+      const spender = '0x1234567890123456789012345678901234567890';
+      const amount = '100';
+
+      // ACT
+      const result = await TokenService.approve(spender, amount);
+
+      // ASSERT
+      expect(readContractSpy).toHaveBeenCalledTimes(1);
+      expect(simulateContractSpy).toHaveBeenCalledTimes(1);
+      expect(writeContractSpy).toHaveBeenCalledTimes(1);
+      expect(waitForTransactionReceiptSpy).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({
+        success: true,
+        transactionHash: mockTxHash,
+        blockNumber: '12345',
+      });
+    });
+
+    it('should handle errors during approval', async () => {
+      // ARRANGE
+      readContractSpy.mockResolvedValueOnce(18);
+      simulateContractSpy.mockRejectedValueOnce(new Error('Simulation failed'));
+      const spender = '0x1234567890123456789012345678901234567890';
+      const amount = '100';
+
+      // ACT & ASSERT
+      await expect(TokenService.approve(spender, amount)).rejects.toThrow();
+      expect(readContractSpy).toHaveBeenCalledTimes(1);
+      expect(simulateContractSpy).toHaveBeenCalledTimes(1);
+      expect(writeContractSpy).not.toHaveBeenCalled();
+      expect(waitForTransactionReceiptSpy).not.toHaveBeenCalled();
+    });
+  });
 });

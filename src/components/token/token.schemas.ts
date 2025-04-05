@@ -51,6 +51,15 @@ export type TransferFromResponseType = Static<
   typeof TransferFromResponseSchema
 >;
 
+// POST /token/approve
+export const ApproveRequestSchema = Type.Object({
+  spender: AddressType,
+  amount: AmountStringType,
+});
+export type ApproveRequestType = Static<typeof ApproveRequestSchema>;
+
+// Reuse TransferFromResponseSchema for ApproveResponse as they have the same structure
+
 // Generic Error Response Schema
 export const ErrorResponseSchema = Type.Object({
   error: Type.Boolean(), // Changed from Type.String()

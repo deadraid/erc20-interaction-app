@@ -189,8 +189,86 @@ async function transferFrom(from: Hex, to: Hex, amount: string) {
   }
 }
 
+/**
+ * Approves a spender to spend tokens on behalf of the service account.
+ */
+async function approve(spender: Hex, amount: string) {
+  logger.info(
+    `Initiating approve: ${amount} tokens for spender ${spender} from ${serviceAccount.address}`,
+  );
+
+  try {
+    const decimals = Number(
+      await publicClient.readContract({
+        ...contractConfig,
+        functionName: 'decimals',
+      }),
+    );
+
+    const parsedAmount = parseUnits(amount, decimals);
+
+    logger.info(
+      `Parsed amount: ${parsedAmount.toString()} (decimals: ${decimals})`,
+    );
+
+    // Simulate the transaction first (catches many potential issues)
+    logger.info('Simulating approve transaction...');
+    const { request } = await publicClient.simulateContract({
+      account: serviceAccount, // The account approving the spender
+      address: contractConfig.address,
+      abi: erc20ABI,
+      functionName: 'approve',
+      args: [spender, parsedAmount],
+    });
+    logger.info('Simulation successful. Sending transaction...');
+
+    // Send the actual transaction
+    const txHash = await walletClient.writeContract(request);
+
+    logger.info(`Transaction sent: ${txHash}. Waiting for confirmation...`);
+
+    // Wait for the transaction to be confirmed
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+      confirmations: 1, // Number of confirmations to wait for
+    });
+
+    logger.info(
+      { receipt },
+      `Transaction confirmed: ${txHash} in block ${receipt.blockNumber}`,
+    );
+
+    return {
+      success: receipt.status === 'success',
+      transactionHash: txHash,
+      blockNumber: receipt.blockNumber.toString(),
+    };
+  } catch (error: unknown) {
+    logger.error({ err: error }, 'Error executing approve');
+
+    if (error instanceof BaseError) {
+      const baseError = error;
+      if (baseError.cause instanceof ContractFunctionExecutionError) {
+        const execError = baseError.cause;
+        // Potentially decode revert reason if ABI is comprehensive
+        logger.error(`Contract execution error: ${execError.shortMessage}`);
+        throw new Error(`Contract execution failed: ${execError.shortMessage}`);
+      }
+      throw new Error(`Transaction failed: ${baseError.shortMessage}`);
+    }
+
+    // Fallback generic error
+    throw new Error(
+      `Failed to execute approve: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`,
+    );
+  }
+}
+
 export const TokenService = {
   getTokenInfo,
   getBalance,
   transferFrom,
+  approve,
 };

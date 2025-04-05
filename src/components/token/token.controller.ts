@@ -3,6 +3,7 @@ import { TokenService } from './token.service.js';
 import {
   GetBalanceParamsType,
   TransferFromRequestType,
+  ApproveRequestType,
 } from './token.schemas.js';
 import { Hex } from 'viem';
 import { handleTokenControllerError } from './token.helper.js';
@@ -91,8 +92,39 @@ async function transferFromHandler(
   }
 }
 
+async function approveHandler(
+  request: FastifyRequest<{ Body: ApproveRequestType }>,
+  reply: FastifyReply,
+) {
+  const operationName = 'approveHandler';
+  const body = request.body;
+  const { spender, amount } = body;
+  const spenderHex = spender as Hex;
+  const logContext: Record<string, unknown> = {
+    spender: spenderHex,
+    amount,
+    requestId: request.id,
+  };
+
+  try {
+    const result = await TokenService.approve(spenderHex, amount);
+    return reply.send(result);
+  } catch (error) {
+    // Get status code and message from the helper
+    const { statusCode, message, errorCode } = handleTokenControllerError(
+      error,
+      request.log,
+      operationName,
+      logContext,
+    );
+    // Send the reply from the controller
+    return reply.status(statusCode).send({ error: true, message, errorCode });
+  }
+}
+
 export const TokenController = {
   getTokenInfoHandler,
   getBalanceHandler,
   transferFromHandler,
+  approveHandler,
 };

@@ -7,9 +7,9 @@ async function main() {
   console.log('Starting deployment to Sepolia testnet...');
 
   // Ensure we have the necessary environment variables
-  const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
-  if (!SEPOLIA_RPC_URL) {
-    throw new Error('SEPOLIA_RPC_URL environment variable is not set.');
+  const RPC_URL = process.env.RPC_URL;
+  if (!RPC_URL) {
+    throw new Error('RPC_URL environment variable is not set.');
   }
 
   // Get the contract factory
@@ -47,6 +47,22 @@ async function main() {
   fs.writeFileSync(deployInfoPath, JSON.stringify(deploymentInfo, null, 2));
   console.log(`Deployment info saved to ${deployInfoPath}`);
 
+  // Mint some tokens to the deployer
+  const [deployer] = await ethers.getSigners();
+  const mintAmount = ethers.parseUnits('1000000', 18);
+  console.log(
+    `Minting ${ethers.formatUnits(mintAmount, 18)} MTK to ${deployer.address}...`,
+  );
+  const mintTx = await token.mint(deployer.address, mintAmount);
+  await mintTx.wait();
+  console.log(
+    `✅ Minted ${ethers.formatUnits(mintAmount, 18)} MTK to ${deployer.address}`,
+  );
+
+  // Verify the new total supply
+  const totalSupply = await token.totalSupply();
+  console.log(`Total supply: ${ethers.formatUnits(totalSupply, 18)} tokens`);
+
   console.log('Deployment completed successfully.');
   console.log('-----------------------------------');
   console.log('Deployment Summary:');
@@ -56,6 +72,7 @@ async function main() {
   console.log(`- Symbol: MTK`);
   console.log(`- Decimals: 18`);
   console.log(`- Address: ${contractAddress}`);
+  console.log(`- Initial Supply: ${ethers.formatUnits(totalSupply, 18)} MTK`);
   console.log('-----------------------------------');
   console.log('Next steps:');
   console.log('1. Update your .env file with the contract address');

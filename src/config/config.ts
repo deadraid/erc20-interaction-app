@@ -55,6 +55,12 @@ const configSchema = convict({
     default: '',
     env: 'CONTRACT_ADDRESS',
   },
+  CHAIN_ID: {
+    doc: 'Chain ID of the blockchain network (e.g., 11155111 for Sepolia)',
+    format: 'nat',
+    default: 11155111, // Default to Sepolia
+    env: 'CHAIN_ID',
+  },
 });
 
 // Perform validation
@@ -70,4 +76,5 @@ export interface Config {
   RPC_URL: string;
   PRIVATE_KEY: string;
   CONTRACT_ADDRESS: `0x${string}`;
+  CHAIN_ID: number;
 }

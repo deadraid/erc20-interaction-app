@@ -23,6 +23,18 @@ const privateKey = config.PRIVATE_KEY as `0x${string}`;
 const rpcUrl = config.RPC_URL as string;
 
 function getChain(): Chain {
+  // Quick detection for common testnets
+  if (rpcUrl.includes('sepolia')) {
+    return {
+      ...chains.sepolia,
+      rpcUrls: {
+        default: { http: [rpcUrl] },
+        public: { http: [rpcUrl] },
+      },
+    };
+  }
+
+  // Try to match against known chain RPC URLs
   const knownChains = Object.values(chains) as Chain[];
   for (const chain of knownChains) {
     if (
@@ -30,12 +42,6 @@ function getChain(): Chain {
         url.includes(new URL(rpcUrl).hostname),
       )
     ) {
-      console.log(`Found known chain: ${chain.name}`);
-      if (!chain.id) {
-        console.warn(
-          `Warning: Chain ${chain.name} found but has no ID in definition. Using default.`,
-        );
-      }
       return {
         ...chain,
         rpcUrls: {
@@ -46,12 +52,10 @@ function getChain(): Chain {
     }
   }
 
-  console.log(
-    'No known chain matched RPC URL hostname. Using generic definition (likely local node).',
-  );
+  // Fallback to config chain ID
   return defineChain({
-    id: 1337,
-    name: 'Local Testnet',
+    id: config.CHAIN_ID,
+    name: config.CHAIN_ID === 11155111 ? 'Sepolia' : 'Custom Chain',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     rpcUrls: {
       default: { http: [rpcUrl] },
